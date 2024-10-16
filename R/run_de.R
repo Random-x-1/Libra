@@ -17,7 +17,7 @@
 #' @param cell_type_col the vector in \code{meta} containing the cell type
 #'   information. Defaults to \code{cell_type}.
 #' @param label_col the vector in \code{meta} containing the experimental
-#'   label. Defaults to \code{label}.
+#'   label. Defaults to \code{label}. Labels 1 and 2 are determined using the factor levels. If no factor levels are provided in the labels of the metadata label column, factors will be run as default on the label column.
 #' @param min_cells the minimum number of cells in a cell type to retain it.
 #'   Defaults to \code{3}.
 #' @param min_reps the minimum number of replicates in a cell type to retain it.
@@ -131,7 +131,11 @@
 #' \item{"avg_logFC"}: The average log fold change between conditions. The
 #' direction of the logFC can be controlled using factor levels of \code{label_col}
 #' whereby a positive logFC reflects higher expression in the first level of
-#' the factor, compared to the second.
+#' the factor, compared to the second. This is calculated using \code{Seurat::FoldChange}.
+#' \item{"label1.pct"}: Percentage of cells expressing the gene in label 1.
+#' \item{"label2.pct"}: Percentage of cells expressing the gene in label 2.
+#' \item{"label1.exp"}: Mean expression of the gene in label 1.
+#' \item{"label2.exp"}: Mean expression of the gene in label 2.
 #' \item{"p_val"}: The p-value resulting from the null hypothesis test.
 #' \item{"p_val_adj"}: The adjusted p-value according to the Benjamini
 #' Hochberg method (FDR).
@@ -142,7 +146,7 @@
 #'
 #' @importFrom magrittr  %<>%
 #' @importFrom forcats fct_recode
-#' @importFrom dplyr group_by mutate select ungroup arrange
+#' @importFrom dplyr group_by mutate select ungroup arrange left_join
 #' @export
 #'
 run_de = function(input,
@@ -172,6 +176,30 @@ run_de = function(input,
     )
   input = inputs$expr
   meta = inputs$meta
+  label_levels = levels(meta$label)
+  cell_type_levels = levels(meta$cell_type)
+  sc = CreateSeuratObject(input, meta.data=meta) %>% NormalizeData(verbose = F)
+  out_stats = data.frame()
+  for (ct in cell_type_levels) {
+      label1_barcodes = meta %>% filter(cell_type == ct, label == label_levels[1]) %>% rownames(.)
+      label2_barcodes = meta %>% filter(cell_type == ct, label == label_levels[2]) %>% rownames(.)
+      label1_mean_expr = rowMeans(input[,label1_barcodes])
+      label2_mean_expr = rowMeans(input[,label2_barcodes])
+      tmp_stats = Seurat::FoldChange(sc, label1_barcodes, label2_barcodes, base=exp(1)) %>%
+          mutate(gene = rownames(.)) %>%
+          set_rownames(NULL) %>%
+          dplyr::select(gene, avg_logFC, pct.1, pct.2)
+      mean_expr = data.frame(
+          gene = names(label1_mean_expr),
+          exp1 = label1_mean_expr,
+          exp2 = label2_mean_expr
+      )
+      out_stats %<>% rbind(tmp_stats %>% 
+          dplyr::left_join(mean_expr, by='gene') %>%
+          mutate(cell_type = ct) %>%
+          dplyr::relocate(cell_type, .before=gene)
+      )
+  }
   
   # run differential expression
   DE = switch(de_family,
@@ -246,11 +274,15 @@ run_de = function(input,
     mutate(p_val_adj = p.adjust(p_val, method = 'BH')) %>%
     # make sure gene is a character not a factor
     mutate(gene = as.character(gene)) %>%
-    # invert logFC to match Seurat level coding
-    mutate(avg_logFC = avg_logFC * -1) %>%
+    dplyr::select(cell_type, gene, p_val, p_val_adj, de_family, de_method, de_type) %>%
+    dplyr::left_join(out_stats, by = c('gene', 'cell_type')) %>%
     dplyr::select(cell_type,
                   gene,
                   avg_logFC,
+                  pct.1,
+                  pct.2,
+                  exp1,
+                  exp2,
                   p_val,
                   p_val_adj,
                   de_family,
@@ -258,8 +290,14 @@ run_de = function(input,
                   de_type
     ) %>%
     ungroup() %>%
-    arrange(cell_type, gene)
-  
+    arrange(cell_type, gene) %>%
+    dplyr::rename(
+      !!paste0(label_levels[1], '.exp') := exp1,
+      !!paste0(label_levels[2], '.exp') := exp2,
+      !!paste0(label_levels[1], '.pct') := pct.1,
+      !!paste0(label_levels[2], '.pct') := pct.2
+    )
+    
     if (input_type == 'scATAC') {
       DE %<>%
           dplyr::rename(
