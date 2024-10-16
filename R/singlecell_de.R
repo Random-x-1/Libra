@@ -181,9 +181,9 @@ singlecell_de = function(
                 } else {
                     meta = sub@meta.data
                 if (packageVersion("SeuratObject") >= 5) {
-                        sc[['RNA']]$data = norm_mat
+                        mat = sc[['RNA']]$data
                     } else {
-                        sc[['RNA']]@data = norm_mat
+                        mat = sc[['RNA']]@data
                             }
                     res = da_function_wrapper(mat, meta, method, cell_type)
                 }
