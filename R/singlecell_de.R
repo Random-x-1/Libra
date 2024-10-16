@@ -127,7 +127,14 @@ singlecell_de = function(
                     } else {
                         sc[['RNA']]@data = norm_mat
                             }
-    
+            }
+    } else {
+                if (packageVersion("SeuratObject") >= 5) {
+                        sc[['RNA']]$data = norm_mat
+                    } else {
+                        sc[['RNA']]@data = norm_mat
+                            }
+    }
     if (binarization) {
         mat = GetAssayData(sc, slot='counts')
         mat@x[mat@x > 0] = 1
