@@ -122,16 +122,20 @@ singlecell_de = function(
             vals[is.na(x = vals)] = 0
             slot(object = norm_mat, name = "x") = vals
             
-            sc[['RNA']]$data = norm_mat
-        }
-    } else {
-        sc[['RNA']]$data = mat
-    }
+            if (packageVersion("SeuratObject") >= 5) {
+                        sc[['RNA']]$data = norm_mat
+                    } else {
+                        sc[['RNA']]@data = norm_mat
+                            }
     
     if (binarization) {
         mat = GetAssayData(sc, slot='counts')
         mat@x[mat@x > 0] = 1
-        sc[['RNA']]$data = mat
+            if (packageVersion("SeuratObject") >= 5) {
+                sc[['RNA']]$data = norm_mat
+            } else {
+                sc[['RNA']]@data = norm_mat
+                    }
     }
     
     # run single cell DE using Seurat
@@ -176,7 +180,11 @@ singlecell_de = function(
                         )
                 } else {
                     meta = sub@meta.data
-                    mat = sc[['RNA']]$data
+                if (packageVersion("SeuratObject") >= 5) {
+                        sc[['RNA']]$data = norm_mat
+                    } else {
+                        sc[['RNA']]@data = norm_mat
+                            }
                     res = da_function_wrapper(mat, meta, method, cell_type)
                 }
                 DE[[cell_type]] = res
