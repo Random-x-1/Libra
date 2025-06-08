@@ -190,10 +190,10 @@ run_de = function(input,
       label2_barcodes = meta %>% filter(cell_type == ct, label == label_levels[2]) %>% rownames(.)
       label1_mean_expr = rowMeans(input[,label1_barcodes])
       label2_mean_expr = rowMeans(input[,label2_barcodes])
-      tmp_stats = Seurat::FoldChange(sc, label1_barcodes, label2_barcodes, base=exp(1)) %>%
+      tmp_stats = Seurat::FoldChange(sc, label1_barcodes, label2_barcodes, base=2) %>%
           mutate(gene = rownames(.)) %>%
           set_rownames(NULL) %>%
-          dplyr::select(gene, avg_logFC, pct.1, pct.2)
+          dplyr::select(gene, avg_log2FC, pct.1, pct.2)
       mean_expr = data.frame(
           gene = names(label1_mean_expr),
           exp1 = label1_mean_expr,
@@ -268,7 +268,7 @@ run_de = function(input,
                'p_val_adj' = 'FDR',            ## edgeER
                'avg_logFC' = 'log2FoldChange', ## DESEeq2
                'avg_logFC' = 'logFC', ## limma/edgeR
-               'avg_logFC' = 'avg_log2FC' # Seurat V4
+               'avg_logFC' = 'avg_log2FC' # Seurat V4/V5
     )
     ) %>%
     as.character()
