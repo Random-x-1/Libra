@@ -79,9 +79,11 @@ pseudobulk_de = function(input,
 #      targets$group %<>% factor(levels = levels(meta$label))
 #    }
 
-    # N
+    # Creat levels no matter factors in label col.
     levels_meta = unique(meta$label) %>% as.character %>% sort
     targets$group %<>% factor(levels = levels_meta)
+
+    # Define reference manually
     targets$group = relevel(targets$group, ref = levels_meta[2])
     
     if (n_distinct(targets$group) > 2)
