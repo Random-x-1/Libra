@@ -194,7 +194,7 @@ run_de = function(input,
           mutate(gene = rownames(.)) %>%
           set_rownames(NULL) %>%
           dplyr::select(gene, avg_log2FC, pct.1, pct.2) %>%
-          fct_recode('avg_logFC' = 'avg_log2FC')
+          dplyr::rename('avg_logFC' = 'avg_log2FC')
       mean_expr = data.frame(
           gene = names(label1_mean_expr),
           exp1 = label1_mean_expr,
