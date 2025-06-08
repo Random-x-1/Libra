@@ -193,7 +193,8 @@ run_de = function(input,
       tmp_stats = Seurat::FoldChange(sc, label1_barcodes, label2_barcodes, base=2) %>%
           mutate(gene = rownames(.)) %>%
           set_rownames(NULL) %>%
-          dplyr::select(gene, avg_log2FC, pct.1, pct.2)
+          dplyr::select(gene, avg_log2FC, pct.1, pct.2) %>%
+          fct_recode('avg_logFC' = 'avg_log2FC')
       mean_expr = data.frame(
           gene = names(label1_mean_expr),
           exp1 = label1_mean_expr,
@@ -289,7 +290,7 @@ run_de = function(input,
           # make sure gene is a character not a factor
           mutate(gene = as.character(gene)) %>%
           dplyr::select(cell_type, gene, p_val, p_val_adj, de_family, de_method, de_type, avg_logFC) %>%
-          dplyr::left_join(out_stats %>% dplyr::select(-avg_log2FC), by = c('gene', 'cell_type'))
+          dplyr::left_join(out_stats %>% dplyr::select(-avg_logFC), by = c('gene', 'cell_type'))
   }
   DE %<>% 
     dplyr::select(cell_type,
