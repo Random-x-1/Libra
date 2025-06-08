@@ -74,14 +74,18 @@ pseudobulk_de = function(input,
     # create targets matrix
     targets = data.frame(group_sample = colnames(x)) %>%
       mutate(group = gsub(".*\\:", "", group_sample))
+
     ## optionally, carry over factor levels from entire dataset
     if (is.factor(meta$label)) {
+      # Drop unused Levels.
+      meta$label = droplevels(meta$label)
+      # Generate levels in targets df.
       targets$group %<>% factor(levels = levels(meta$label))
       # Redefine Reference Group
       targets$group = relevel(targets$group, ref =  levels(meta$label)[2])
     }
- 
-    if (n_distinct(targets$group) > 2)
+    
+     if (n_distinct(targets$group) > 2)
       return(NULL)
     # create design
     design = model.matrix(~ group, data = targets)
