@@ -75,9 +75,15 @@ pseudobulk_de = function(input,
     targets = data.frame(group_sample = colnames(x)) %>%
       mutate(group = gsub(".*\\:", "", group_sample))
     ## optionally, carry over factor levels from entire dataset
-    if (is.factor(meta$label)) {
-      targets$group %<>% factor(levels = levels(meta$label))
-    }
+#    if (is.factor(meta$label)) {
+#      targets$group %<>% factor(levels = levels(meta$label))
+#    }
+
+    # N
+    levels_meta = unique(meta$label) %>% as.character %>% sort
+    targets$group %<>% factor(levels = levels_meta)
+    targets$group = relevel(targets$group, ref = levels_meta[2])
+    
     if (n_distinct(targets$group) > 2)
       return(NULL)
     # create design
