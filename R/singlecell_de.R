@@ -122,14 +122,14 @@ singlecell_de = function(
             vals[is.na(x = vals)] = 0
             slot(object = norm_mat, name = "x") = vals
             
-            if (packageVersion("SeuratObject") >= 5) {
+            if (packageVersion("SeuratObject") >= "5") {
                         sc[['RNA']]$data = norm_mat
                     } else {
                         sc[['RNA']]@data = norm_mat
                             }
             }
     } else {
-                if (packageVersion("SeuratObject") >= 5) {
+                if (packageVersion("SeuratObject") >= "5") {
                         sc[['RNA']]$data = norm_mat
                     } else {
                         sc[['RNA']]@data = norm_mat
@@ -187,7 +187,7 @@ singlecell_de = function(
                         )
                 } else {
                     meta = sub@meta.data
-                if (packageVersion("SeuratObject") >= 5) {
+                if (packageVersion("SeuratObject") >= "5") {
                         mat = sc[['RNA']]$data
                     } else {
                         mat = sc[['RNA']]@data
